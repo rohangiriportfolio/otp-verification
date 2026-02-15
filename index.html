@@ -398,7 +398,7 @@
                 secret.</p>
             <div class="code-container">
                 <button class="copy-btn" onclick="copyCode('code1', this)">Copy</button>
-                <pre id="code1">fetch('/api/setup', {
+                <pre id="code1">fetch('https://verify-via-otp.vercel.app/api/setup', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ label: "User", issuer: "App" })
@@ -414,7 +414,7 @@
                 secret.</p>
             <div class="code-container">
                 <button class="copy-btn" onclick="copyCode('code2', this)">Copy</button>
-                <pre id="code2">fetch('/api/verify', {
+                <pre id="code2">fetch('https://verify-via-otp.vercel.app/api/verify', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ 
