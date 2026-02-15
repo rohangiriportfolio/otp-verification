@@ -1,7 +1,13 @@
 {
   "version": 2,
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/generator.js" },
-    { "source": "/", "destination": "/index.html" }
+    {
+      "source": "/api/:path*",
+      "destination": "/generator.js"
+    },
+    {
+      "source": "/",
+      "destination": "/index.html"
+    }
   ]
 }
