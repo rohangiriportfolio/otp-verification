@@ -1,0 +1,16 @@
+# Ignore the massive library folder (Vercel builds this itself)
+node_modules/
+
+# Ignore local environment secrets
+.env
+.env.local
+
+# Ignore OS-specific system files
+.DS_Store
+Thumbs.db
+
+# Ignore Vercel's local build cache
+.vercel/
+
+# Ignore debug logs
+npm-debug.log*

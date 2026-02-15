@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>2FA Setup</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; }
+        #qr-display { margin: 20px; border: 1px solid #ccc; padding: 10px; width: 200px; }
+        .result { font-weight: bold; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Scan this QR Code</h1>
+    <!-- We'll keep this hidden until the image loads -->
+    <img id="qr-display" alt="Loading QR code..." />
+
+    <hr>
+
+    <h3>Verify Your Code</h3>
+    <input type="text" id="otp-input" placeholder="000000" maxlength="6">
+    <button onclick="verifyCode()">Check Code</button>
+    <p id="status-message" class="result"></p>
+
+    <script>
+        // 1. Updated Setup: Get the secret AND the image
+        // Change '/qr-data' to '/api/setup' to match your new self-contained route
+        fetch('/api/setup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ label: "User123", issuer: "MyAPI" })
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('qr-display').src = data.qr_image;
+            
+            // CRITICAL: Save the secret in the browser's memory
+            // In a real app, this would be saved to your DB!
+            sessionStorage.setItem('temp_secret', data.secret);
+            console.log("Secret saved locally for verification.");
+        })
+        .catch(err => console.error("Error fetching setup data:", err));
+
+        // 2. Updated Verification: Send BOTH the token and the secret
+        async function verifyCode() {
+            const token = document.getElementById('otp-input').value;
+            const statusLabel = document.getElementById('status-message');
+            
+            // Retrieve the secret we saved in step 1
+            const secret = sessionStorage.getItem('temp_secret');
+
+            try {
+                // Change '/verify' to '/api/verify'
+                const response = await fetch('/api/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        token: token,
+                        secret: secret // Sending the secret back to the stateless server
+                    })
+                });
+
+                const result = await response.json();
+                
+                statusLabel.innerText = result.message;
+                statusLabel.style.color = result.success ? "green" : "red";
+            } catch (err) {
+                statusLabel.innerText = "Error connecting to server.";
+            }
+        }
+    </script>
+</body>
+</html>

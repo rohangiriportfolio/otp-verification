@@ -1,0 +1,19 @@
+{
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "qrcode": "^1.5.4",
+    "speakeasy": "^2.0.0"
+  },
+  "name": "otp-generator",
+  "version": "1.0.0",
+  "main": "generator.js",
+  "scripts": {
+    "start": "node generator.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
