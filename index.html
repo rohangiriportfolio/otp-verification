@@ -1,71 +1,589 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <title>2FA Setup</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP-Auth API Portal</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding-top: 50px; }
-        #qr-display { margin: 20px; border: 1px solid #ccc; padding: 10px; width: 200px; }
-        .result { font-weight: bold; margin-top: 10px; }
-    </style>
-</head>
-<body>
-    <h1>Scan this QR Code</h1>
-    <!-- We'll keep this hidden until the image loads -->
-    <img id="qr-display" alt="Loading QR code..." />
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f1f5f9;
+            --accent: #38bdf8;
+            --nav-h: 70px;
+            --green: #10b981;
+            --amber: #fbbf24;
+            --red: #ef4444;
+        }
 
-    <hr>
+        * {
+            box-sizing: border-box;
+        }
 
-    <h3>Verify Your Code</h3>
-    <input type="text" id="otp-input" placeholder="000000" maxlength="6">
-    <button onclick="verifyCode()">Check Code</button>
-    <p id="status-message" class="result"></p>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            margin: 0;
+            padding-top: var(--nav-h);
+            padding-bottom: 80px;
+            scroll-behavior: smooth;
+        }
 
-    <script>
-        // 1. Updated Setup: Get the secret AND the image
-        // Change '/qr-data' to '/api/setup' to match your new self-contained route
-        fetch('https://verify-via-otp.vercel.app/api/setup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ label: "User123", issuer: "MyAPI" })
-        })
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('qr-display').src = data.qr_image;
-            
-            // CRITICAL: Save the secret in the browser's memory
-            // In a real app, this would be saved to your DB!
-            sessionStorage.setItem('temp_secret', data.secret);
-            console.log("Secret saved locally for verification.");
-        })
-        .catch(err => console.error("Error fetching setup data:", err));
+        /* Navbar */
+        .navbar {
+            height: var(--nav-h);
+            background: var(--card);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            border-bottom: 1px solid #334155;
+        }
 
-        // 2. Updated Verification: Send BOTH the token and the secret
-        async function verifyCode() {
-            const token = document.getElementById('otp-input').value;
-            const statusLabel = document.getElementById('status-message');
-            
-            // Retrieve the secret we saved in step 1
-            const secret = sessionStorage.getItem('temp_secret');
+        .nav-logo {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--accent);
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
 
-            try {
-                // Change '/verify' to '/api/verify'
-                const response = await fetch('/api/verify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        token: token,
-                        secret: secret // Sending the secret back to the stateless server
-                    })
-                });
+        .nav-links {
+            display: flex;
+            gap: 25px;
+            list-style: none;
+            padding: 0;
+        }
 
-                const result = await response.json();
-                
-                statusLabel.innerText = result.message;
-                statusLabel.style.color = result.success ? "green" : "red";
-            } catch (err) {
-                statusLabel.innerText = "Error connecting to server.";
+        .nav-links a {
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 500;
+            transition: 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent);
+        }
+
+        .hamburger {
+            display: none;
+            cursor: pointer;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: var(--text);
+            border-radius: 2px;
+            transition: 0.3s;
+        }
+
+        /* Content UI */
+        .container {
+            max-width: 900px;
+            margin: 25px auto;
+            padding: 0 20px;
+            text-align: center;
+        }
+
+        .card {
+            background: var(--card);
+            padding: 25px 25px 10px 25px;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+            margin-bottom: 40px;
+            border: 1px solid #334155;
+        }
+
+        h1,
+        h2 {
+            margin-top: 0;
+            color: var(--accent);
+        }
+
+        input {
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid #334155;
+            background: #0f172a;
+            color: white;
+            width: 180px;
+            text-align: center;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+        }
+
+        button {
+            background: var(--accent);
+            color: #0f172a;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4);
+        }
+
+        #qr-display {
+            margin: 25px auto;
+            display: block;
+            border: 6px solid white;
+            border-radius: 12px;
+            background: white;
+            max-width: 100%;
+            transition: 0.5s;
+        }
+
+        /* Documentation section */
+        .doc-section {
+            text-align: left;
+        }
+
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 30px;
+            margin-bottom: 12px;
+        }
+
+        .badge {
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 900;
+            color: #000;
+            text-transform: uppercase;
+        }
+
+        .badge-setup {
+            background: var(--amber);
+        }
+
+        .badge-verify {
+            background: var(--green);
+            color: white;
+        }
+
+        .endpoint-url {
+            font-family: 'Fira Code', monospace;
+            color: var(--accent);
+            font-size: 0.95rem;
+        }
+
+        .code-container {
+            position: relative;
+            margin-top: 10px;
+        }
+
+        pre {
+            background: #000;
+            padding: 18px;
+            border-radius: 10px;
+            overflow-x: auto;
+            color: #10b981;
+            border: 1px solid #334155;
+            font-size: 0.85rem;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: #1e293b;
+            color: var(--accent);
+            border: 1px solid #334155;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: var(--accent);
+            color: #000;
+        }
+
+        /* Footer Status Bar */
+        .footer-status {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: #0f172a;
+            border-top: 1px solid #334155;
+            padding: 14px 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            font-size: 0.85rem;
+            z-index: 1001;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        /* Reactive Pulse CSS */
+        .pulse {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            transition: 0.5s;
+        }
+
+        .pulse.online {
+            background: var(--green);
+            animation: pulse-green 2s infinite;
+        }
+
+        .pulse.error {
+            background: var(--red);
+            animation: pulse-red 2s infinite;
+        }
+
+        .pulse.loading {
+            background: var(--accent);
+            animation: pulse-blue 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
             }
         }
+
+        @keyframes pulse-red {
+            0% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
+
+        @keyframes pulse-blue {
+            0% {
+                box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(56, 189, 248, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(56, 189, 248, 0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hamburger {
+                display: flex;
+            }
+
+            .nav-links {
+                position: fixed;
+                right: -100%;
+                top: var(--nav-h);
+                flex-direction: column;
+                background: var(--card);
+                width: 100%;
+                text-align: center;
+                transition: 0.3s;
+                padding: 40px 0;
+                height: calc(100vh - var(--nav-h));
+            }
+
+            .nav-links.active {
+                right: 0;
+            }
+        }
+
+        .secret-hover {
+            color: var(--accent);
+            background: #0f172a;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <a href="javascript:void(0)" class="nav-logo">OTP-AUTH ENGINE</a>
+        <div class="hamburger" id="hamburger"><span></span><span></span><span></span></div>
+        <ul class="nav-links" id="nav-links">
+            <li><a href="#demo">LIVE DEMO</a></li>
+            <li><a href="#docs">API DOCS</a></li>
+            <li><a href="https://github.com" target="_blank">GITHUB</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="card" id="demo">
+            <h2>Enrollment Demo</h2>
+            <p style="font-size: 0.9rem; opacity: 0.7;">Scan with Google Authenticator or Authy</p>
+            <img id="qr-display" src="" alt="QR Loading..." width="180" height="180">
+            <p>
+                <code id="secret-view" class="secret-hover">Hover to show secret</code>
+            </p>
+
+
+
+
+            <hr style="border: 0; border-top: 1px solid #334155; margin: 15px 0;">
+
+            <h2>Validation Test</h2>
+            <input type="text" id="otp-input" placeholder="000000" maxlength="6">
+            <button onclick="verifyCode()">Verify Identity</button>
+            <p id="status-message" style="margin-top: 10px; font-size: 1.1rem; min-height: 1.5rem;"></p>
+        </div>
+
+        <div class="card doc-section" id="docs">
+            <h2 style="text-align: center;">Developer API Documentation</h2>
+            <p style="text-align: center; opacity: 0.8; margin-bottom: 30px;">Integrate this Authentication logic
+                into any website.</p>
+
+            <!-- Setup -->
+            <div class="endpoint-header">
+                <span class="badge badge-setup">POST</span>
+                <span class="endpoint-url">/api/setup</span>
+            </div>
+            <p style="font-size: 0.85rem; color: #94a3b8;">Generates a new secret and QR Image. Client must save the
+                secret.</p>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode('code1', this)">Copy</button>
+                <pre id="code1">fetch('/api/setup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ label: "User", issuer: "App" })
+})</pre>
+            </div>
+
+            <!-- Verify -->
+            <div class="endpoint-header" style="margin-top: 40px;">
+                <span class="badge badge-verify">POST</span>
+                <span class="endpoint-url">/api/verify</span>
+            </div>
+            <p style="font-size: 0.85rem; color: #94a3b8;">Mathematically validates the 6-digit token against the
+                secret.</p>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode('code2', this)">Copy</button>
+                <pre id="code2">fetch('/api/verify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+        token: "123456", 
+        secret: "SAVED_USER_SECRET" 
+    })
+})</pre>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer-status">
+        <div class="status-pill">
+            <div id="status-pulse" class="pulse online"></div>
+            <span id="status-text">System Operational</span>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:18px;">
+            <div>
+                <span style="opacity: 0.6;">Made by </span><strong style="color: var(--accent);">Rohan Giri</strong>
+            </div>
+            <div id="last-ping" style="opacity: 0.5;">Waiting for ping...</div>
+        </div>
+    </footer>
+
+
+    <script>
+        // Navbar Logic
+        const menu = document.getElementById('hamburger');
+        const links = document.getElementById('nav-links');
+        menu.onclick = () => links.classList.toggle('active');
+
+        // API Logic
+        const API_BASE = window.location.origin; // Dynamically gets your Vercel URL
+
+        // Setup: Get QR on load
+        window.onload = () => {
+            fetch(`${API_BASE}/api/setup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ label: "DevUser", issuer: "OTP-API" })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('qr-display').src = data.qr_image;
+                    const secretBox = document.getElementById('secret-view');
+                    secretBox.dataset.secret = data.secret;
+
+                    secretBox.addEventListener('mouseenter', () => {
+                        secretBox.innerText = secretBox.dataset.secret;
+                    });
+
+                    secretBox.addEventListener('mouseleave', () => {
+                        secretBox.innerText = "Hover to show secret";
+                    });
+
+                    sessionStorage.setItem('temp_secret', data.secret);
+                    updateStatus('online', 'System Operational');
+                })
+                .catch(() => updateStatus('error', 'API Offline'));
+        };
+
+        // Verify
+        async function verifyCode() {
+            const token = document.getElementById('otp-input').value;
+            const secret = sessionStorage.getItem('temp_secret');
+            const statusMsg = document.getElementById('status-message');
+
+            if (!token || token.length < 6) {
+                statusMsg.innerText = "⚠️ Enter 6 digits";
+                statusMsg.style.color = "var(--amber)";
+                return;
+            }
+
+            // Pulse Loading
+            updateStatus('loading', 'Verifying Token...');
+
+            try {
+                const res = await fetch(`${API_BASE}/api/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, secret })
+                });
+                const result = await res.json();
+
+                if (result.success) {
+                    updateStatus('online', 'Access Granted');
+                    statusMsg.innerText = "✅ Success! Valid Token.";
+                    statusMsg.style.color = "var(--green)";
+                } else {
+                    updateStatus('error', 'Invalid Token');
+                    statusMsg.innerText = "❌ Incorrect or Expired Code.";
+                    statusMsg.style.color = "var(--red)";
+                }
+
+                // Reset status bar after 3 seconds
+                setTimeout(() => updateStatus('online', 'System Operational'), 3000);
+            } catch (err) {
+                updateStatus('error', 'Connection Error');
+            }
+        }
+
+        // Helper: Update Footer Status
+        function updateStatus(type, text) {
+            const pulse = document.getElementById('status-pulse');
+            const statusText = document.getElementById('status-text');
+            const ping = document.getElementById('last-ping');
+
+            pulse.className = `pulse ${type}`;
+            statusText.innerText = text;
+            ping.innerText = `Last Event: ${new Date().toLocaleTimeString()}`;
+        }
+
+        // Helper: Copy Code
+        function copyCode(id, btn) {
+            const text = document.getElementById(id).innerText;
+            navigator.clipboard.writeText(text);
+            const originalText = btn.innerText;
+            btn.innerText = "Copied!";
+            btn.style.background = "var(--green)";
+            btn.style.color = "white";
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.background = "#1e293b";
+                btn.style.color = "var(--accent)";
+            }, 2000);
+        }
+        document.querySelectorAll('.nav-links a[href^="#"]').forEach(link => {
+            link.addEventListener('click', function (e) {
+                const targetId = this.getAttribute('href');
+                const target = document.querySelector(targetId);
+
+                if (!target) return;
+
+                e.preventDefault();
+
+                const navHeight = parseInt(
+                    getComputedStyle(document.documentElement)
+                        .getPropertyValue('--nav-h')
+                );
+
+                const targetPosition =
+                    target.getBoundingClientRect().top +
+                    window.pageYOffset -
+                    navHeight - 25; // small padding
+
+                window.scrollTo({
+                    top: targetPosition,
+                    behavior: 'smooth'
+                });
+
+                // Close mobile menu if open
+                document.getElementById('nav-links').classList.remove('active');
+            });
+        });
+        // Smooth scroll for top-left logo
+        document.querySelector('.nav-logo').addEventListener('click', function (e) {
+            e.preventDefault();
+
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+
+            // Close mobile menu if open
+            document.getElementById('nav-links').classList.remove('active');
+        });
+
     </script>
 </body>
+
 </html>
