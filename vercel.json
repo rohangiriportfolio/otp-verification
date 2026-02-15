@@ -1,6 +1,9 @@
 {
   "version": 2,
   "rewrites": [
-    { "source": "/(.*)", "dest": "generator.js" }
+    { 
+      "source": "/(.*)", 
+      "destination": "/generator.js" 
+    }
   ]
 }
