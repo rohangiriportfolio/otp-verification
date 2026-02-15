@@ -23,7 +23,7 @@
     <script>
         // 1. Updated Setup: Get the secret AND the image
         // Change '/qr-data' to '/api/setup' to match your new self-contained route
-        fetch('/api/setup', {
+        fetch('https://verify-via-otp.vercel.app/api/setup', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ label: "User123", issuer: "MyAPI" })
